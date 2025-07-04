@@ -31,11 +31,10 @@ const QuestionsPage = () => {
   const {
     data: questions = [],
     isLoading,
-    isError,
+    isError송기,
     error,
     refetch,
   } = useGetQuestionsQuery();
-
   const [addQuestion, { isLoading: isAddingQuestion }] =
     useAddQuestionMutation();
   const [updateQuestion, { isLoading: isUpdatingQuestion }] =
@@ -83,13 +82,26 @@ const QuestionsPage = () => {
   };
 
   const handleEdit = (question) => {
-    // Transform API response to match modal's expected format
+    // Normalize options to ensure consistent format
+    const normalizeOptions = (opts) => {
+      if (!opts || !Array.isArray(opts)) return [];
+      return opts
+        .map((opt) => {
+          if (typeof opt === "string") return opt;
+          if (typeof opt === "object" && opt !== null) {
+            return opt.option_text || opt.text || opt.value || "";
+          }
+          return String(opt);
+        })
+        .filter(Boolean); // Remove falsy values
+    };
+
     const formattedQuestion = {
       id: question.id,
-      question: question.title || question.question,
-      type: question.input_type || question.type,
+      question: question.title || question.question || "",
+      type: question.input_type || question.type || "text",
       placeholder: question.placeholder || "",
-      options: question.options || question.choices || [],
+      options: normalizeOptions(question.options || question.choices),
     };
     setSelectedQuestion(formattedQuestion);
     setShowAddModal(true);
@@ -107,7 +119,6 @@ const QuestionsPage = () => {
         toast.success("Question deleted successfully");
         setShowDeleteModal(false);
         setSelectedQuestion(null);
-
         // Adjust current page if necessary after deletion
         const newTotalItems = totalItems - 1;
         const newTotalPages = Math.ceil(newTotalItems / itemsPerPage);
@@ -159,10 +170,9 @@ const QuestionsPage = () => {
       number: "bg-purple-100 text-purple-800",
       email: "bg-orange-100 text-orange-800",
     };
-
     return (
       <span
-        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
           typeColors[type] || "bg-gray-100 text-gray-800"
         }`}
       >
@@ -171,6 +181,7 @@ const QuestionsPage = () => {
     );
   };
 
+  
   // Helper function to render placeholder or options
   const renderQuestionDetails = (question) => {
     const questionType = question.input_type || question.type;
@@ -214,7 +225,7 @@ const QuestionsPage = () => {
         return (
           <div className="space-y-1">
             <p className="text-xs text-gray-500 font-medium">Placeholder:</p>
-            <p className="text-sm text-gray-700 italic">"{placeholder}"</p>
+            <p className="text-sm text-gray-700 italic">{placeholder}</p>
           </div>
         );
       } else {
@@ -232,7 +243,6 @@ const QuestionsPage = () => {
     const getPageNumbers = () => {
       const pages = [];
       const maxVisiblePages = 5;
-
       if (totalPages <= maxVisiblePages) {
         // Show all pages if total is less than max visible
         for (let i = 1; i <= totalPages; i++) {
@@ -265,26 +275,22 @@ const QuestionsPage = () => {
           pages.push(totalPages);
         }
       }
-
       return pages;
     };
 
     if (totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
-        <div className="flex items-center text-sm text-gray-500">
-          <span>
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
-            results
-          </span>
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
+        <div className="text-sm text-gray-600">
+          Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+          {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+          results
         </div>
-
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           {/* Items per page selector */}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500">Show:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Show:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
@@ -292,19 +298,18 @@ const QuestionsPage = () => {
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
+              <option value={20}>20</option>
             </select>
           </div>
-
           {/* Pagination buttons */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft className="h-5 w-5" />
             </button>
-
             {getPageNumbers().map((page, index) => (
               <button
                 key={index}
@@ -323,13 +328,12 @@ const QuestionsPage = () => {
                 {page}
               </button>
             ))}
-
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight size={16} />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -339,42 +343,25 @@ const QuestionsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  if (isError) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-        <p className="text-red-600">
-          Error loading questions:{" "}
-          {error?.data?.message || error?.message || "Unknown error"}
-        </p>
-        <button
-          onClick={refetch}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div>
+    <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Question Management</h1>
-        <div className="flex items-center space-x-2">
-          <div className="search-container">
-            <Search className="search-icon" size={16} />
+        <h1 className="text-2xl font-bold">Question Management</h1>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search questions..."
-              className="search-input"
               value={searchTerm}
               onChange={handleSearchChange}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <button
@@ -384,7 +371,7 @@ const QuestionsPage = () => {
             }}
             className="action-button"
           >
-            <Plus className="action-icon" size={16} />
+            <Plus className="h-5 w-5 mr-2" />
             Add Questions
           </button>
         </div>
@@ -392,88 +379,68 @@ const QuestionsPage = () => {
 
       {/* Question Statistics */}
       {questions.length > 0 && (
-        <div className="my-6 grid grid-cols-1 md:grid-cols-4 gap-4 ">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">
-                    {
-                      questions.filter(
-                        (q) => (q.input_type || q.type) === "text"
-                      ).length
-                    }
-                  </span>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <Pencil className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Text Input Questions
+              <div>
+                <p className="text-lg font-semibold">
+                  {
+                    questions.filter((q) => (q.input_type || q.type) === "text")
+                      .length
+                  }
                 </p>
+                <p className="text-sm text-gray-600">Text Input Questions</p>
                 <p className="text-xs text-gray-500">
                   Questions with text input fields
                 </p>
               </div>
             </div>
           </div>
-
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 font-semibold text-sm">
-                    {
-                      questions.filter(
-                        (q) => (q.input_type || q.type) === "select"
-                      ).length
-                    }
-                  </span>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-2 rounded-full">
+                <Pencil className="h-5 w-5 text-green-600" />
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Dropdown Questions
+              <div>
+                <p className="text-lg font-semibold">
+                  {
+                    questions.filter(
+                      (q) => (q.input_type || q.type) === "select"
+                    ).length
+                  }
                 </p>
+                <p className="text-sm text-gray-600">Dropdown Questions</p>
                 <p className="text-xs text-gray-500">
                   Questions with selectable options
                 </p>
               </div>
             </div>
           </div>
-
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-semibold text-sm">
-                    {questions.length}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-purple-100 p-2 rounded-full">
+                <Pencil className="h-5 w-5 text-purple-600" />
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Total Questions
-                </p>
+              <div>
+                <p className="text-lg font-semibold">{questions.length}</p>
+                <p className="text-sm text-gray-600">Total Questions</p>
                 <p className="text-xs text-gray-500">
                   All questions in the system
                 </p>
               </div>
             </div>
           </div>
-
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-orange-600 font-semibold text-sm">
-                    {totalItems}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-100 p-2 rounded-full">
+                <Search className="h-5 w-5 text-orange-600" />
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Filtered Results
-                </p>
+              <div>
+                <p className="text-lg font-semibold">{totalItems}</p>
+                <p className="text-sm text-gray-600">Filtered Results</p>
                 <p className="text-xs text-gray-500">
                   Questions matching search
                 </p>
@@ -483,10 +450,10 @@ const QuestionsPage = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
+          <thead>
+            <tr className="bg-gray-50">
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Question
               </th>
@@ -496,36 +463,32 @@ const QuestionsPage = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Details
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedQuestions.map((question) => (
-              <tr key={question.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">
-                    {question.title || question.question}
-                  </div>
+              <tr key={question.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {question.title || question.question}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {renderQuestionType(question.input_type || question.type)}
                 </td>
-                <td className="px-6 py-4">
-                  <div className="max-w-xs">
-                    {renderQuestionDetails(question)}
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {renderQuestionDetails(question)}
                 </td>
-                <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center space-x-2">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(question)}
                       className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
                       disabled={isUpdatingQuestion}
                       title="Edit question"
                     >
-                      <Pencil size={18} />
+                      <Pencil className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => handleDelete(question)}
@@ -533,7 +496,7 @@ const QuestionsPage = () => {
                       disabled={isDeletingQuestion}
                       title="Delete question"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 className="h-5 w-5" />
                     </button>
                   </div>
                 </td>
@@ -541,11 +504,13 @@ const QuestionsPage = () => {
             ))}
             {paginatedQuestions.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  <div className="flex flex-col items-center">
-                    <Search className="h-12 w-12 text-gray-300 mb-2" />
+                <td
+                  colSpan="4"
+                  className="px-6 py-4 text-center text-sm text-gray-500"
+                >
+                  <div className="py-8">
                     <p className="text-lg font-medium">No questions found</p>
-                    <p className="text-sm">
+                    <p>
                       {searchTerm
                         ? "Try adjusting your search terms"
                         : "Get started by adding your first question"}
@@ -556,19 +521,20 @@ const QuestionsPage = () => {
             )}
           </tbody>
         </table>
-
-        {/* Pagination Controls */}
-        <PaginationControls />
       </div>
+
+      {/* Pagination Controls */}
+      <PaginationControls />
 
       {/* Add/Edit Question Modal */}
       {showAddModal && (
         <QuestionModal
-          question={selectedQuestion}
+          isOpen={showAddModal}
           onClose={() => {
             setShowAddModal(false);
             setSelectedQuestion(null);
           }}
+          question={selectedQuestion}
           onSave={handleSaveQuestion}
           isSubmitting={isAddingQuestion || isUpdatingQuestion}
         />
@@ -577,8 +543,10 @@ const QuestionsPage = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <DeleteConfirmationModal
+          isOpen={showDeleteModal}
           title="Are you sure?"
           message="Do you want to delete this question? This action cannot be undone."
+          onClose={() => setShowDeleteModal(false)}
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteModal(false)}
           isLoading={isDeletingQuestion}
