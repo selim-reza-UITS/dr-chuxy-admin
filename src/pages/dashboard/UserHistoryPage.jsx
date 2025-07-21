@@ -18,6 +18,7 @@ import {
   useDeleteUserResponseMutation,
   useGetUserHistoryQuery,
 } from "../../features/admin/adminSlice";
+import { RichTextDisplay } from "../../utils/RichTextDisplay";
 
 const UserHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -590,7 +591,7 @@ const UserHistory = () => {
                       </div>
                       <div className="bg-white border border-purple-200 rounded-lg p-4 max-h-80 overflow-y-auto">
                         <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                          {selectedUser.ai_response}
+                          <RichTextDisplay content={selectedUser.ai_response} />
                         </div>
                       </div>
                     </div>

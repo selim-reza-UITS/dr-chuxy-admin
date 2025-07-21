@@ -1,4 +1,4 @@
-import { apiSlice } from "../api/apiSlice";
+import { apiSlice } from "../api/apiSlice"
 
 export const pdfUploadApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -7,8 +7,6 @@ export const pdfUploadApi = apiSlice.injectEndpoints({
         url: "/pdf/",
         method: "POST",
         body: formData,
-        // Ensure headers are not set manually for FormData
-        // RTK Query will handle this automatically
       }),
       invalidatesTags: ["pdf"],
     }),
@@ -19,7 +17,14 @@ export const pdfUploadApi = apiSlice.injectEndpoints({
       }),
       providesTags: ["pdf"],
     }),
+    deletePdfByPmid: builder.mutation({
+      query: (pmid) => ({
+        url: `/pdf/delete-by-pmid/${pmid}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["pdf"],
+    }),
   }),
-});
+})
 
-export const { useUploadPdfMutation, useGetPdfListQuery } = pdfUploadApi;
+export const { useUploadPdfMutation, useGetPdfListQuery, useDeletePdfByPmidMutation } = pdfUploadApi

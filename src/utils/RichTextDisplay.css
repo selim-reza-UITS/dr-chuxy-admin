@@ -1,0 +1,38 @@
+.rich-text-content ol {
+  list-style-type: decimal;
+  padding-left: 20px;
+}
+
+.rich-text-content {
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 0 0 1em;
+  padding-left: 20px;
+}
+
+.rich-text-content li {
+  margin-bottom: 0.5em;
+}
+
+.rich-text-content strong {
+  font-weight: bold;
+}
+
+.rich-text-content em {
+  font-style: italic;
+}
+.rich-text-content a {
+  color: #2563eb; /* blue-600 */
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.rich-text-content a:hover {
+  color: #1e40af; /* blue-800 */
+  text-decoration: underline;
+}
